@@ -4,9 +4,10 @@
 #include <ArduinoJson.h>
 #include <ESP8266WebServer.h>
 #include <EEPROM.h>
+#include "Adafruit_MCP23X17.h"
 
 #define ANZ_STAENDE 12
-#define SIMULATION_MODE false
+#define SIMULATION_MODE true
 
 struct settings {
   char ssid[30];
@@ -20,6 +21,9 @@ ESP8266WebServer server(80);
 WebSocketClient ws(false);
 
 StaticJsonDocument<512> msg_rx_json;
+
+Adafruit_MCP23X17 mcp0;
+const uint8_t mcp0_addr = 0; // Adresse 0x20 / 0
 
 void handleConfig() {
   if (server.method() == HTTP_POST) {
@@ -71,6 +75,15 @@ void setup()
 {
   Serial.begin(9600);
   delay(6000);
+
+  if (!mcp0.begin_I2C()) {
+  //if (!mcp.begin_SPI(CS_PIN)) {
+    Serial.println("Error on I2C Bus.");
+    while (1);
+  }
+  for(int i = 1;i <= ANZ_STAENDE;i++){
+    mcp0.pinMode(i, OUTPUT);
+  }
 
   Serial.println();
   Serial.println("Running Firmware.");
@@ -177,6 +190,9 @@ void loop()
       Serial.print("Stand ");
       Serial.print(i);
       Serial.println(" ist frei");
+      mcp0.digitalWrite(i, LOW);
+    } else {
+      mcp0.digitalWrite(i, HIGH);
     }
   }
 	delay(2000);
