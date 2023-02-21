@@ -8,7 +8,7 @@
 
 #define ANZ_STAENDE 12
 #define ERST_STAND 1
-#define SIMULATION_MODE true
+#define SIMULATION_MODE false
 
 struct settings {
   char ssid[30];
