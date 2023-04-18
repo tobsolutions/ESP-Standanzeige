@@ -97,41 +97,37 @@ void setup()
   Serial.print("Connecting to ");
   Serial.println(user_settings.ssid);
    
-  WiFi.mode(WIFI_STA);
+  WiFi.mode(WIFI_AP_STA);
   WiFi.disconnect();
   delay(100);
   WiFi.begin(user_settings.ssid, user_settings.password);
   Serial.print("Connecting...");
 
   byte tries = 0;
-  byte wifistat = 0; //1: WLAN Connection 2: AP for WIFI Config
   while (WiFi.status() != WL_CONNECTED) {  
     Serial.print("..");
-    wifistat = 1;
     if (tries++ > 15) {
-      WiFi.mode(WIFI_AP);
-      WiFi.softAP("ESP-Standanzeige", "12345678");
-      wifistat = 2;
       Serial.println(".");
-      Serial.println("WiFi AP started.");
-      Serial.println("Connect to AP for WIFI config.");
-      Serial.println("SSID: ESP-Standanzeige Pass: 12345678");
-      Serial.println("IP address: 192.168.4.1");
       break;
     }
-    delay(1000);
+    delay(5000);
   }
-  if(wifistat == 1) {
+  if (WiFi.status() != WL_CONNECTED) { 
+    WiFi.softAP("ESP-Standanzeige", "12345678");
     Serial.println(".");
+    Serial.println("WiFi AP started.");
+    Serial.println("Connect to AP for WIFI config.");
+    Serial.println("SSID: ESP-Standanzeige Pass: 12345678");
+    Serial.println("IP address: 192.168.4.1");
+  } else {
     Serial.print("WiFi connected to ");
     Serial.println(user_settings.ssid);
     Serial.print("IP address: ");
     Serial.println(WiFi.localIP());
-    server.on("/",  handleFreeLanes);
-    server.on("/config",  handleConfig);
-  } else if(wifistat == 2) {
-    server.on("/",  handleConfig);
   }
+
+  server.on("/",  handleFreeLanes);
+  server.on("/config",  handleConfig);
   server.begin();
 }
 
