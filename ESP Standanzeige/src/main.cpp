@@ -13,6 +13,8 @@
 struct settings {
   char ssid[30];
   char password[30];
+  int anz_staende;
+  int erst_stand;
 } user_settings = {};
 
 int freeLanes[ERST_STAND+ANZ_STAENDE];
@@ -30,6 +32,8 @@ void handleConfig() {
   if (server.method() == HTTP_POST) {
     strncpy(user_settings.ssid,     server.arg("ssid").c_str(),     sizeof(user_settings.ssid) );
     strncpy(user_settings.password, server.arg("password").c_str(), sizeof(user_settings.password) );
+    user_settings.anz_staende = server.arg("anz_staende").toInt();
+    user_settings.erst_stand = server.arg("erst_stand").toInt();
     user_settings.ssid[server.arg("ssid").length()] = user_settings.password[server.arg("password").length()] = '\0';
     EEPROM.put(0, user_settings);
     EEPROM.commit();
@@ -39,37 +43,38 @@ void handleConfig() {
     String html;
     html = "<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'><title>Setup</title> <style>*,::after,::before{box-sizing:border-box;}body{margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans','Liberation Sans';font-size:1rem;font-weight:400;line-height:1.5;color:#212529;background-color:#f5f5f5;}.form-control{display:block;width:100%;height:calc(1.5em + .75rem + 2px);border:1px solid #ced4da;}button{cursor: pointer;border:1px solid transparent;color:#fff;background-color:#007bff;border-color:#007bff;padding:.5rem 1rem;font-size:1.25rem;line-height:1.5;border-radius:.3rem;width:100%}.form-signin{width:100%;max-width:400px;padding:15px;margin:auto;}h1{text-align: center}</style> </head> <body><main class='form-signin'> <form action='/' method='post'> <h1 class=''>Wifi Setup</h1><br/><div class='form-floating'><label>SSID</label><input type='text' class='form-control' name='ssid' value='";
     html += user_settings.ssid;
-    html += "'> </div><div class='form-floating'><br/><label>Password</label><input type='password' class='form-control' name='password'></div><br/><br/><button type='submit'>Save</button><p style='text-align: right'><a href='https://www.esp-standanzeige.de' style='color: #32C5FF'>esp-standanzeige.de</a></p></form></main> </body></html>";
+    html += "'> </div><div class='form-floating'><br/><label>Password</label><input type='password' class='form-control' name='password'></div><div class='form-floating'><br/><label>Anzahl Stände</label><input type='number' class='form-control' name='anz_staende' value='";
+    html += user_settings.anz_staende;
+    html += "'></div><div class='form-floating'><br/><label>Nummer erster Stand</label><input type='number' class='form-control' name='erst_stand' value='";
+    html += user_settings.erst_stand;
+    html += "'></div><br/><br/><button type='submit'>Save</button><p style='text-align: right'><a href='https://www.esp-standanzeige.de' style='color: #32C5FF'>esp-standanzeige.de</a></p></form></main> </body></html>";
     server.send(200,   "text/html", html);
   }
 }
 
 void handleFreeLanes() {
-  if (server.method() == HTTP_POST) {
-    strncpy(user_settings.ssid,     server.arg("ssid").c_str(),     sizeof(user_settings.ssid) );
-    strncpy(user_settings.password, server.arg("password").c_str(), sizeof(user_settings.password) );
-    user_settings.ssid[server.arg("ssid").length()] = user_settings.password[server.arg("password").length()] = '\0';
-    EEPROM.put(0, user_settings);
-    EEPROM.commit();
-
-    server.send(200,   "text/html",  "<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'><title>Wifi Setup</title><style>*,::after,::before{box-sizing:border-box;}body{margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans','Liberation Sans';font-size:1rem;font-weight:400;line-height:1.5;color:#212529;background-color:#f5f5f5;}.form-control{display:block;width:100%;height:calc(1.5em + .75rem + 2px);border:1px solid #ced4da;}button{border:1px solid transparent;color:#fff;background-color:#007bff;border-color:#007bff;padding:.5rem 1rem;font-size:1.25rem;line-height:1.5;border-radius:.3rem;width:100%}.form-signin{width:100%;max-width:400px;padding:15px;margin:auto;}h1,p{text-align: center}</style> </head> <body><main class='form-signin'> <h1>Wifi Setup</h1> <br/> <p>Your settings have been saved successfully!<br />Please restart the device.</p></main></body></html>" );
-  } else {
-    String html;
-    html = "<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'><title>ESP Standanzeige</title> <style>*,::after,::before{box-sizing:border-box;}body{margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans','Liberation Sans';font-size:1rem;font-weight:400;line-height:1.5;color:#212529;background-color:#f5f5f5;}.form-control{display:block;width:100%;height:calc(1.5em + .75rem + 2px);border:1px solid #ced4da;}button{cursor: pointer;border:1px solid transparent;color:#fff;background-color:#007bff;border-color:#007bff;padding:.5rem 1rem;font-size:1.25rem;line-height:1.5;border-radius:.3rem;width:100%}.form-signin{width:100%;max-width:400px;padding:15px;margin:auto;}h1{text-align: center}</style> </head> <body><main class='form-signin'><h2>ESP Standanzeige</h2>";
-    html += "<p>";
-    for(int i = ERST_STAND;i < ANZ_STAENDE+ERST_STAND;i++){
-      html += "Stand ";
-      html += i;
-      if(freeLanes[i] == 1){
-        html += " ist frei</br>";
-      } else {
-        html += " ist belegt</br>";
-      }
-    }
+  String html;
+  html = "<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'><title>ESP Standanzeige</title> <style>*,::after,::before{box-sizing:border-box;}body{margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans','Liberation Sans';font-size:1rem;font-weight:400;line-height:1.5;color:#212529;background-color:#f5f5f5;}.form-control{display:block;width:100%;height:calc(1.5em + .75rem + 2px);border:1px solid #ced4da;}button{cursor: pointer;border:1px solid transparent;color:#fff;background-color:#007bff;border-color:#007bff;padding:.5rem 1rem;font-size:1.25rem;line-height:1.5;border-radius:.3rem;width:100%}.form-signin{width:100%;max-width:400px;padding:15px;margin:auto;}h1{text-align: center}</style> </head> <body><main class='form-signin'><h2>ESP Standanzeige</h2>";
+  if (WiFi.status() != WL_CONNECTED) { 
+    html += "<p style='text-align: right'>WLAN: ";
+    html += user_settings.ssid;
     html += "</p>";
-    html += "<p style='text-align: right'><a href='/config' style='color: #32C5FF'>Config</a></p><p style='text-align: right'><a href='https://www.esp-standanzeige.de' style='color: #32C5FF'>esp-standanzeige.de</a></p></main></body></html>";
-    server.send(200,   "text/html", html);
+  } else {
+    html += "<p style='text-align: right'>WLAN: ---";
   }
+  html += "<p>";
+  for(int i = ERST_STAND;i < ANZ_STAENDE+ERST_STAND;i++){
+    html += "Stand ";
+    html += i;
+    if(freeLanes[i] == 1){
+      html += " ist frei</br>";
+    } else {
+      html += " ist belegt</br>";
+    }
+  }
+  html += "</p>";
+  html += "<p style='text-align: right'><a href='/config' style='color: #32C5FF'>Config</a></p><p style='text-align: right'><a href='https://www.esp-standanzeige.de' style='color: #32C5FF'>esp-standanzeige.de</a></p></main></body></html>";
+  server.send(200,   "text/html", html);
 }
 
 void setup()
@@ -114,7 +119,6 @@ void setup()
   }
   if (WiFi.status() != WL_CONNECTED) { 
     WiFi.softAP("ESP-Standanzeige", "12345678");
-    Serial.println(".");
     Serial.println("WiFi AP started.");
     Serial.println("Connect to AP for WIFI config.");
     Serial.println("SSID: ESP-Standanzeige Pass: 12345678");
@@ -171,13 +175,10 @@ void loop()
       }
 
       JsonArray data = msg_rx_json["Data"];
-      //Serial.print("data[0]: ");
-      //Serial.println(data[0].as<String>());
       for(int i = ERST_STAND;i < ANZ_STAENDE+ERST_STAND;i++){
         freeLanes[i] = 0;
       }
       for(JsonVariant v : data){
-        //Serial.println(v.as<int>());
         freeLanes[v.as<int>()] = 1;
       }
 		}
